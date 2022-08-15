@@ -40,7 +40,7 @@ def write_to_influxdb(**context):
                 .field("high", float(ds[2])) \
                 .field("low", float(ds[3])) \
                 .field("close", float(ds[4])) \
-                .time(datetime.datetime.strptime(ds[0],"%m/%d/%Y"),WritePrecision.NS)
+                .time(datetime.strptime(ds[0],"%m/%d/%Y"),WritePrecision.NS)
                 data.append(point)
                 # influxdb批次寫入資料的效率較單資料點寫入高
             if (ind+1)%5000==0:

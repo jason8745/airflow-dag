@@ -1,3 +1,5 @@
 # airflow-dag
-放一些Airflow 的Dag
-還在慢慢摸索中...
+- dag_vix_quoter
+  - 恐慌指數爬蟲
+- option_quoter
+  - 選擇權PC ratio爬蟲與計算

@@ -1,5 +1,6 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+from airflow.models import Variable
 from datetime import datetime
 
 default_args = {
@@ -22,11 +23,10 @@ def vix_crawler(**context):
 def write_to_influxdb(**context):
     from influxdb_client import InfluxDBClient, Point, WritePrecision
     from influxdb_client.client.write_api import SYNCHRONOUS
-		# 透過templates傳遞變數
-    url = {{ var.value.influxdb_url}}
-    token = {{ var.value.token}}
-    org = {{ var.value.org}}
-    bucket = {{ var.value.bucket}}
+    url = Variable.get("influxdb_url")
+    token = Variable.get("token")
+    org = Variable.get("org")
+    bucket = "index"
 		# 透過xcom從vix_crawler取得df
     df = context['task_instance'].xcom_pull(task_ids='vix_crawler')
     with InfluxDBClient(url, token=token, org=org) as client:

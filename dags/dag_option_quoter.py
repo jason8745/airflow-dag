@@ -26,13 +26,6 @@ def write_to_influxdb(**context):
     url = Variable.get("influxdb_url")
     token = Variable.get("token")
     org = Variable.get("org")
-    # url = {{ var.value.influxdb_url}}
-    # token = {{ var.value.token}}
-    # org = {{ var.value.org}}
-    # bucket = {{ var.value.bucket}}
-    # url = "http://172.104.80.55:8086"
-    # token = "Jn7IbL0FQYsArbfgYYSO0IbXScWewRpagEw4dhv2zluOZw7c8tbbGRRUQFB_X5nWRZA4qi3TZQCwH2mgDuvfaQ=="
-    # org = "influxdb"
     bucket = "option"
     # 透過xcom從option_crawler取得df
     df = context['task_instance'].xcom_pull(task_ids='option_crawler')

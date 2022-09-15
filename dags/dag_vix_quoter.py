@@ -13,11 +13,8 @@ def vix_crawler(**context):
     import io
     
     csv_url = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
-    try:
-        content = requests.get(csv_url)
-        df = pd.read_csv(io.StringIO(content.text), sep=",")
-    except Exception as e :
-        print(e)
+    content = requests.get(csv_url)
+    df = pd.read_csv(io.StringIO(content.text), sep=",")    
     return df
 
 def write_to_influxdb(**context):
@@ -30,28 +27,23 @@ def write_to_influxdb(**context):
 		# 透過xcom從vix_crawler取得df
     df = context['task_instance'].xcom_pull(task_ids='vix_crawler')
     with InfluxDBClient(url, token=token, org=org) as client:
-        try:
-            write_api = client.write_api(write_options=SYNCHRONOUS)
-            data = []              
-            for ind , ds in enumerate(df.values):
-                point = Point("vix") \
-                .tag("type",' history') \
-                .field("open", float(ds[1])) \
-                .field("high", float(ds[2])) \
-                .field("low", float(ds[3])) \
-                .field("close", float(ds[4])) \
-                .time(datetime.strptime(ds[0],"%m/%d/%Y"),WritePrecision.NS)
-                data.append(point)
-                # influxdb批次寫入資料的效率較單資料點寫入高
-            if (ind+1)%5000==0:
-                write_api.write(bucket, org, data)
-                data=[] # 清空
-                print('write data to influxdb')
-		        # 剩下的一次寫入<5000筆
-            write_api.write(bucket, org, data)    
+        
+        write_api = client.write_api(write_options=SYNCHRONOUS)
+        data = []              
+        for ds in df[-10:].values:
+            point = Point("vix") \
+            .tag("type",' history') \
+            .field("open", float(ds[1])) \
+            .field("high", float(ds[2])) \
+            .field("low", float(ds[3])) \
+            .field("close", float(ds[4])) \
+            .time(datetime.strptime(ds[0],"%m/%d/%Y"),WritePrecision.NS)
+            data.append(point)
+            # influxdb批次寫入資料的效率較單資料點寫入高
+        
+        write_api.write(bucket, org, data)    
             
-        except Exception as e:
-            print(e)
+        
 # Dag名稱: vix_quoter
 with DAG('vix_quoter', default_args=default_args,schedule_interval='@daily') as dag:
     vix_crawler = PythonOperator(

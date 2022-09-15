@@ -21,8 +21,6 @@ def option_crawler(**context):
 def write_to_influxdb(**context):
     from influxdb_client import InfluxDBClient, Point, WritePrecision
     from influxdb_client.client.write_api import SYNCHRONOUS
-		# 透過templates傳遞變數
-    
     url = Variable.get("influxdb_url")
     token = Variable.get("token")
     org = Variable.get("org")
@@ -30,25 +28,24 @@ def write_to_influxdb(**context):
     # 透過xcom從option_crawler取得df
     df = context['task_instance'].xcom_pull(task_ids='option_crawler')
     with InfluxDBClient(url, token=token, org=org) as client:
-        try:
-            write_api = client.write_api(write_options=SYNCHRONOUS)
-            data = []
-            for  ds in df.values:
-                point = Point('option') \
-                .tag("type", "sell") \
-                .field("volume", float(ds[4])) \
-                .time(datetime.datetime.strptime(ds[0], "%Y/%m/%d"),WritePrecision.NS)
-                data.append(point)
-                point = Point('option') \
-                .tag("type", "buy") \
-                .field("volume", float(ds[5])) \
-                .time(datetime.datetime.strptime(ds[0], "%Y/%m/%d"),WritePrecision.NS)
-                data.append(point)
+        
+        write_api = client.write_api(write_options=SYNCHRONOUS)
+        data = []
+        for  ds in df.values:
+            point = Point('option') \
+            .tag("type", "sell") \
+            .field("volume", float(ds[4])) \
+            .time(datetime.strptime(ds[0], "%Y/%m/%d"),WritePrecision.NS)
+            data.append(point)
+            point = Point('option') \
+            .tag("type", "buy") \
+            .field("volume", float(ds[5])) \
+            .time(datetime.strptime(ds[0], "%Y/%m/%d"),WritePrecision.NS)
+            data.append(point)
 
-            write_api.write(bucket, org, data)
+        write_api.write(bucket, org, data)
             
-        except Exception as e:
-            print(e)
+        
 # Dag名稱: option_quoter
 with DAG('option_quoter', default_args=default_args,schedule_interval='@daily') as dag:
     option_crawler = PythonOperator(
